@@ -9,3 +9,12 @@ features = ["time"]
 
 [dependencies.time]
 version = "0.1"
+
+[dependencies.nickel]
+version = "0.2"
+
+[dependencies.nickel_macros]
+version = "0.1"
+
+[dependencies.rustc-serialize]
+version = "0.3"

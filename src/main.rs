@@ -1,6 +1,12 @@
+extern crate nickel;
 extern crate postgres;
+extern crate rustc_serialize;
 extern crate time;
+#[macro_use] extern crate nickel_macros;
 
+use std::collections::BTreeMap;
+use nickel::{Nickel, HttpRouter};
+use rustc_serialize::json::{Json, ToJson};
 use postgres::{Connection, SslMode};
 use time::{Timespec, strftime, at};
 
@@ -11,6 +17,25 @@ pub struct Commute {
     pub arrived_at: Option<Timespec>,
     pub created_at: Option<Timespec>,
     pub updated_at: Option<Timespec>,
+}
+
+fn timespec_to_json(timespec: Timespec) -> Json {
+    time::at(timespec).to_utc().rfc3339().to_string().to_json()
+}
+
+impl ToJson for Commute {
+    fn to_json(&self) -> Json {
+        let mut map = BTreeMap::new();
+
+        map.insert("id".to_string(), self.id.to_json());
+        map.insert("user_id".to_string(), self.user_id.to_json());
+        map.insert("departed_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
+        map.insert("arrived_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
+        map.insert("created_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
+        map.insert("updated_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
+
+        Json::Object(map)
+    }
 }
 
 pub struct CommutePresenter<'s> {
@@ -36,30 +61,30 @@ impl<'s> CommutePresenter<'s> {
 }
 
 fn main() {
-    let conn = Connection::connect(
-        "postgres://chris@localhost/commute_tracker_development",
-        &SslMode::None,
-    ).unwrap();
+    let mut server = Nickel::new();
+    let mut router = Nickel::router();
 
-    let stmt = conn.prepare("SELECT * FROM commutes").unwrap();
+    router.get("/commutes", middleware! { |request|
+        let conn = Connection::connect(
+            "postgres://chris@localhost/commute_tracker_development",
+            &SslMode::None,
+        ).unwrap();
+        let stmt = conn.prepare("SELECT * FROM commutes").unwrap();
 
-    for row in stmt.query(&[]).unwrap() {
-        let commute = Commute {
-            id: row.get("id"),
-            user_id: row.get("user_id"),
-            departed_at: row.get("departed_at"),
-            arrived_at: row.get("arrived_at"),
-            created_at: row.get("created_at"),
-            updated_at: row.get("updated_at"),
-        };
+        let commutes = stmt.query(&[]).unwrap().iter().map( |row|
+            Commute {
+                id: row.get("id"),
+                user_id: row.get("user_id"),
+                departed_at: row.get("departed_at"),
+                arrived_at: row.get("arrived_at"),
+                created_at: row.get("created_at"),
+                updated_at: row.get("updated_at"),
+            }
+        ).collect::<Vec<Commute>>();
 
-        let presenter = CommutePresenter { commute: &commute };
+        commutes.to_json()
+    });
 
-        println!(
-            "user {} departed at {} and arrived at {}",
-            commute.user_id,
-            presenter.departed_at(),
-            presenter.arrived_at(),
-        );
-    }
+    server.utilize(router);
+    server.listen("127.0.0.1:6767");
 }
