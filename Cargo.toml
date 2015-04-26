@@ -1,0 +1,11 @@
+[package]
+name = "commute-tracker-api"
+version = "0.0.1"
+authors = ["Chris Thorn <chris@thorn.co>"]
+
+[dependencies.postgres]
+version = "0.8"
+features = ["time"]
+
+[dependencies.time]
+version = "0.1"
