@@ -4,13 +4,35 @@ extern crate time;
 use postgres::{Connection, SslMode};
 use time::{Timespec, strftime, at};
 
-struct Commute {
-    id: i32,
-    user_id: i32,
-    departed_at: Option<Timespec>,
-    arrived_at: Option<Timespec>,
-    created_at: Option<Timespec>,
-    updated_at: Option<Timespec>,
+pub struct Commute {
+    pub id: i32,
+    pub user_id: i32,
+    pub departed_at: Option<Timespec>,
+    pub arrived_at: Option<Timespec>,
+    pub created_at: Option<Timespec>,
+    pub updated_at: Option<Timespec>,
+}
+
+pub struct CommutePresenter<'s> {
+    commute: &'s Commute,
+}
+
+impl<'s> CommutePresenter<'s> {
+    pub fn arrived_at(&self) -> String {
+        self.format_time(self.commute.arrived_at)
+    }
+
+    pub fn departed_at(&self) -> String {
+        self.format_time(self.commute.departed_at)
+    }
+
+    fn format_time(&self, time: Option<Timespec>) -> String {
+        match time {
+            // TODO: there's probably a better way to do this
+            Some(time) => strftime("%m-%d-%y %H:%M:%S UTC", &at(time)).unwrap(),
+            None => "unknown".to_string(),
+        }
+    }
 }
 
 fn main() {
@@ -31,11 +53,13 @@ fn main() {
             updated_at: row.get("updated_at"),
         };
 
+        let presenter = CommutePresenter { commute: &commute };
+
         println!(
             "user {} departed at {} and arrived at {}",
             commute.user_id,
-            strftime("%m-%d-%y %H:%M:%S UTC", &at(commute.departed_at.unwrap())).unwrap(),
-            strftime("%m-%d-%y %H:%M:%S UTC", &at(commute.arrived_at.unwrap())).unwrap(),
+            presenter.departed_at(),
+            presenter.arrived_at(),
         );
     }
 }
