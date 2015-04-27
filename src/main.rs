@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use nickel::{Nickel, HttpRouter};
 use rustc_serialize::json::{Json, ToJson};
 use postgres::{Connection, SslMode};
-use time::{Timespec, strftime, at};
+use time::{Timespec, at};
 
 pub struct Commute {
     pub id: i32,
@@ -38,28 +38,6 @@ impl ToJson for Commute {
     }
 }
 
-pub struct CommutePresenter<'s> {
-    commute: &'s Commute,
-}
-
-impl<'s> CommutePresenter<'s> {
-    pub fn arrived_at(&self) -> String {
-        self.format_time(self.commute.arrived_at)
-    }
-
-    pub fn departed_at(&self) -> String {
-        self.format_time(self.commute.departed_at)
-    }
-
-    fn format_time(&self, time: Option<Timespec>) -> String {
-        match time {
-            // TODO: there's probably a better way to do this
-            Some(time) => strftime("%m-%d-%y %H:%M:%S UTC", &at(time)).unwrap(),
-            None => "unknown".to_string(),
-        }
-    }
-}
-
 fn main() {
     let mut server = Nickel::new();
     let mut router = Nickel::router();
@@ -69,6 +47,7 @@ fn main() {
             "postgres://chris@localhost/commute_tracker_development",
             &SslMode::None,
         ).unwrap();
+
         let stmt = conn.prepare("SELECT * FROM commutes").unwrap();
 
         let commutes = stmt.query(&[]).unwrap().iter().map( |row|
