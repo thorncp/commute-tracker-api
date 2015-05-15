@@ -11,7 +11,9 @@ features = ["time"]
 version = "0.1"
 
 [dependencies.nickel]
-version = "0.2"
+# version = "0.2"
+git = "https://github.com/nickel-org/nickel.rs.git"
+features = ["unstable"]
 
 [dependencies.nickel_macros]
 version = "0.1"
