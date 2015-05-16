@@ -30,9 +30,9 @@ impl ToJson for Commute {
         map.insert("id".to_string(), self.id.to_json());
         map.insert("user_id".to_string(), self.user_id.to_json());
         map.insert("departed_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
-        map.insert("arrived_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
-        map.insert("created_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
-        map.insert("updated_at".to_string(), timespec_to_json(self.departed_at.unwrap()));
+        map.insert("arrived_at".to_string(), timespec_to_json(self.arrived_at.unwrap()));
+        map.insert("created_at".to_string(), timespec_to_json(self.created_at.unwrap()));
+        map.insert("updated_at".to_string(), timespec_to_json(self.updated_at.unwrap()));
 
         Json::Object(map)
     }
