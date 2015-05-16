@@ -64,6 +64,28 @@ fn main() {
         commutes.to_json()
     });
 
+    router.get("/commutes/:id", middleware! { |request|
+        let conn = Connection::connect(
+            "postgres://chris@localhost/commute_tracker_development",
+            &SslMode::None,
+        ).unwrap();
+
+        let commute_id = request.param("id").parse::<i32>().unwrap();
+        let stmt = conn.prepare("SELECT * FROM commutes WHERE id = $1 LIMIT 1").unwrap();
+        let results = stmt.query(&[&commute_id]).unwrap();
+        let row = results.iter().next().unwrap();
+        let commute = Commute {
+            id: row.get("id"),
+            user_id: row.get("user_id"),
+            departed_at: row.get("departed_at"),
+            arrived_at: row.get("arrived_at"),
+            created_at: row.get("created_at"),
+            updated_at: row.get("updated_at"),
+        };
+
+        commute.to_json()
+    });
+
     server.utilize(router);
     server.listen("127.0.0.1:6767");
 }
