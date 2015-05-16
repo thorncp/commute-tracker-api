@@ -38,16 +38,20 @@ impl ToJson for Commute {
     }
 }
 
+// TODO: keep a connection (or pool) open instead of reconnecting every time
+fn connection() -> Connection {
+    Connection::connect(
+        "postgres://chris@localhost/commute_tracker_development",
+        &SslMode::None,
+    ).unwrap()
+}
+
 fn main() {
     let mut server = Nickel::new();
     let mut router = Nickel::router();
 
     router.get("/commutes", middleware! { |request|
-        let conn = Connection::connect(
-            "postgres://chris@localhost/commute_tracker_development",
-            &SslMode::None,
-        ).unwrap();
-
+        let conn = connection();
         let stmt = conn.prepare("SELECT * FROM commutes").unwrap();
 
         let commutes = stmt.query(&[]).unwrap().iter().map( |row|
@@ -65,15 +69,12 @@ fn main() {
     });
 
     router.get("/commutes/:id", middleware! { |request|
-        let conn = Connection::connect(
-            "postgres://chris@localhost/commute_tracker_development",
-            &SslMode::None,
-        ).unwrap();
-
+        let conn = connection();
         let commute_id = request.param("id").parse::<i32>().unwrap();
         let stmt = conn.prepare("SELECT * FROM commutes WHERE id = $1 LIMIT 1").unwrap();
         let results = stmt.query(&[&commute_id]).unwrap();
         let row = results.iter().next().unwrap();
+
         let commute = Commute {
             id: row.get("id"),
             user_id: row.get("user_id"),
