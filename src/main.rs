@@ -7,7 +7,7 @@ extern crate time;
 use std::collections::BTreeMap;
 use nickel::{Nickel, HttpRouter};
 use rustc_serialize::json::{Json, ToJson};
-use postgres::{Connection, SslMode};
+use postgres::{Connection, Row, SslMode};
 use time::{Timespec, at};
 
 pub struct Commute {
@@ -21,6 +21,19 @@ pub struct Commute {
 
 fn timespec_to_json(timespec: Timespec) -> Json {
     time::at(timespec).to_utc().rfc3339().to_string().to_json()
+}
+
+impl Commute {
+    fn from_record(row: &Row) -> Commute {
+        Commute {
+            id: row.get("id"),
+            user_id: row.get("user_id"),
+            departed_at: row.get("departed_at"),
+            arrived_at: row.get("arrived_at"),
+            created_at: row.get("created_at"),
+            updated_at: row.get("updated_at"),
+        }
+    }
 }
 
 impl ToJson for Commute {
@@ -55,14 +68,7 @@ fn main() {
         let stmt = conn.prepare("SELECT * FROM commutes").unwrap();
 
         let commutes = stmt.query(&[]).unwrap().iter().map( |row|
-            Commute {
-                id: row.get("id"),
-                user_id: row.get("user_id"),
-                departed_at: row.get("departed_at"),
-                arrived_at: row.get("arrived_at"),
-                created_at: row.get("created_at"),
-                updated_at: row.get("updated_at"),
-            }
+            Commute::from_record(&row)
         ).collect::<Vec<Commute>>();
 
         commutes.to_json()
@@ -73,16 +79,9 @@ fn main() {
         let commute_id = request.param("id").parse::<i32>().unwrap();
         let stmt = conn.prepare("SELECT * FROM commutes WHERE id = $1 LIMIT 1").unwrap();
         let results = stmt.query(&[&commute_id]).unwrap();
+        // TODO: handle no records returned
         let row = results.iter().next().unwrap();
-
-        let commute = Commute {
-            id: row.get("id"),
-            user_id: row.get("user_id"),
-            departed_at: row.get("departed_at"),
-            arrived_at: row.get("arrived_at"),
-            created_at: row.get("created_at"),
-            updated_at: row.get("updated_at"),
-        };
+        let commute = Commute::from_record(&row);
 
         commute.to_json()
     });
