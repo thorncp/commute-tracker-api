@@ -1,13 +1,13 @@
-extern crate nickel;
+#[macro_use] extern crate nickel;
 extern crate postgres;
 extern crate rustc_serialize;
 extern crate time;
-#[macro_use] extern crate nickel_macros;
 
 use std::collections::BTreeMap;
 use nickel::{Nickel, HttpRouter};
 use rustc_serialize::json::{Json, ToJson};
-use postgres::{Connection, Row, SslMode};
+use postgres::{Connection, SslMode};
+use postgres::rows::Row;
 use time::{Timespec, at};
 
 pub struct Commute {
