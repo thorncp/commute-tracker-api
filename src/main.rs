@@ -22,7 +22,7 @@ fn main() {
     let mut server = Nickel::new();
     let mut router = Nickel::router();
 
-    router.get("/commutes", middleware! { |request|
+    router.get("/commutes", middleware! { |_request|
         let conn = connection();
         let stmt = conn.prepare("SELECT * FROM commutes").unwrap();
 
