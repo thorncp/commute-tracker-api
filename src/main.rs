@@ -3,7 +3,7 @@ extern crate postgres;
 extern crate rustc_serialize;
 extern crate time;
 
-use nickel::{Nickel, HttpRouter};
+use nickel::{JsonBody, Nickel, HttpRouter};
 use rustc_serialize::json::ToJson;
 use postgres::{Connection, SslMode};
 use models::Commute;
@@ -43,6 +43,17 @@ fn main() {
         let commute = Commute::from_record(&row);
 
         commute.to_json()
+    });
+
+    router.post("/commutes", middleware! { |request|
+        match request.json_as::<Commute>().as_mut() {
+            Ok(commute) => {
+                // TODO: save to database
+                commute.id = Some(42);
+                commute.to_json()
+            },
+            Err(e) => format!("{{ message: '{:?}' }}", e).to_json(),
+        }
     });
 
     server.utilize(router);
